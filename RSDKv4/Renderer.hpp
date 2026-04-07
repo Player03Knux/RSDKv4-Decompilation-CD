@@ -139,6 +139,7 @@ void SetPerspectiveMatrix(float w, float h, float near, float far);
 void SetupDrawIndexList();
 void SetRenderMatrix(MatrixF *matrix);
 void NewRenderState();
+void FlipScreenVideo();
 void RenderScene();
 
 // Textures

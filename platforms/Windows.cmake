@@ -26,6 +26,16 @@ else()
     target_link_libraries(RetroEngine libvorbis)
 endif()
 
+find_package(unofficial-theora CONFIG)
+
+if(NOT unofficial-theora_FOUND)
+    set(COMPILE_THEORA TRUE)
+    message(NOTICE "libtheora not found, attempting to build from source")
+else()
+    message("found libtheora")
+    target_link_libraries(RetroEngine unofficial::theora::theoradec)
+endif()
+
 if(RETRO_USE_HW_RENDER)
     find_package(GLEW CONFIG)
 

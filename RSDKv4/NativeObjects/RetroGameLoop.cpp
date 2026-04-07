@@ -48,6 +48,11 @@ void RetroGameLoop_Main(void *objPtr)
 
         case ENGINE_WAIT: break;
 
+        case ENGINE_VIDEOWAIT:
+            if (ProcessVideo() == 1)
+                Engine.gameMode = ENGINE_MAINGAME;
+            break;
+
         case ENGINE_SCRIPTERROR:
             Engine.LoadGameConfig("Data/Game/GameConfig.bin");
             InitErrorMessage();

@@ -33,6 +33,7 @@ int currentMusicTrack = -1;
 
 #if RETRO_USING_SDL2
 SDL_AudioDeviceID audioDevice;
+SDL_AudioStream *ogv_stream = NULL;
 #endif
 SDL_AudioSpec audioDeviceFormat;
 
@@ -66,6 +67,11 @@ int InitAudioPlayback()
         PrintLog("Unable to open audio device: %s", SDL_GetError());
         audioEnabled = false;
         return true; // no audio but game wont crash now
+    }
+
+    ogv_stream = SDL_NewAudioStream(AUDIO_F32SYS, 2, 48000, audioDeviceFormat.format, audioDeviceFormat.channels, audioDeviceFormat.freq);
+    if (!ogv_stream) {
+        PrintLog("Failed to create OGV audio stream: %s", SDL_GetError());
     }
 #elif RETRO_USING_SDL1
     if (SDL_OpenAudio(&want, &audioDeviceFormat) == 0) {
@@ -332,6 +338,30 @@ void ProcessAudioPlayback(void *userdata, Uint8 *stream, int len)
 
         // Mix music
         ProcessMusicStream(mix_buffer, samples_to_do * sizeof(Sint16));
+
+#if RETRO_USING_SDL2
+        if (videoPlaying == 1) {
+            const size_t bytes_to_do = samples_to_do * sizeof(Sint16);
+
+            const THEORAPLAY_AudioPacket *packet;
+            while ((packet = THEORAPLAY_getAudio(videoDecoder)) != NULL) {
+                SDL_AudioStreamPut(ogv_stream, packet->samples, packet->frames * sizeof(float) * 2);
+                THEORAPLAY_freeAudio(packet);
+            }
+
+            Sint16 ogv_buffer[MIX_BUFFER_SAMPLES];
+
+            if (SDL_AudioStreamAvailable(ogv_stream) < (int)bytes_to_do)
+                SDL_AudioStreamFlush(ogv_stream);
+
+            int get = SDL_AudioStreamGet(ogv_stream, ogv_buffer, (int)bytes_to_do);
+            if (get != -1)
+                ProcessAudioMixing(mix_buffer, ogv_buffer, get / sizeof(Sint16), bgmVolume, 0);
+        }
+        else if (ogv_stream) {
+            SDL_AudioStreamClear(ogv_stream);
+        }
+#endif
 
         // Mix SFX
         for (byte i = 0; i < CHANNEL_COUNT; ++i) {

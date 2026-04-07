@@ -330,6 +330,54 @@ void NewRenderState()
         }
     }
 }
+void FlipScreenVideo()
+{
+#if RETRO_USING_OPENGL
+    if (videoBuffer == 0)
+        return;
+
+    glDisable(GL_DEPTH_TEST);
+    glDisable(GL_LIGHTING);
+    glDisable(GL_BLEND);
+    glClear(GL_COLOR_BUFFER_BIT);
+
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-1.0, 1.0, -1.0, 1.0, -1.0, 1.0);
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+
+    float best = std::fmin(SCREEN_XSIZE_F / (float)videoWidth, SCREEN_YSIZE_F / (float)videoHeight);
+    float w    = videoWidth * best;
+    float h    = videoHeight * best;
+
+    float x1 = (SCREEN_XSIZE_F - w) / (2.0f * SCREEN_XSIZE_F) * 2.0f - 1.0f;
+    float y1 = -((SCREEN_YSIZE_F - h) / (2.0f * SCREEN_YSIZE_F) * 2.0f - 1.0f);
+    float x2 = x1 + (w / SCREEN_XSIZE_F) * 2.0f;
+    float y2 = y1 - (h / SCREEN_YSIZE_F) * 2.0f;
+
+    GLfloat verts[] = { x1, y1, x2, y1, x1, y2, x2, y2 };
+    GLfloat texcoords[] = { 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f };
+    GLushort indices[] = { 0, 1, 2, 1, 3, 2 };
+
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, videoBuffer);
+
+    glEnableClientState(GL_VERTEX_ARRAY);
+    glEnableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisableClientState(GL_COLOR_ARRAY);
+
+    glVertexPointer(2, GL_FLOAT, 0, verts);
+    glTexCoordPointer(2, GL_FLOAT, 0, texcoords);
+
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_SHORT, indices);
+
+    glDisableClientState(GL_VERTEX_ARRAY);
+    glDisableClientState(GL_TEXTURE_COORD_ARRAY);
+    glDisable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+#endif
+}
 void RenderScene()
 {
 #if RETRO_USING_OPENGL
@@ -339,6 +387,10 @@ void RenderScene()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glDisable(GL_BLEND);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    if (Engine.gameMode == ENGINE_VIDEOWAIT) {
+        FlipScreenVideo();
+        return;
+    }
 #endif
     if (renderStateCount == -1)
         return;

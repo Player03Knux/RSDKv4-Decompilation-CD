@@ -547,6 +547,9 @@ const FunctionInfo functions[] = {
 #endif
     FunctionInfo("Print", 3),
 
+    FunctionInfo("LoadVideo", 1),
+    FunctionInfo("NextVideoFrame", 0),
+
 #if RETRO_REV03
     // Extras
     FunctionInfo("CheckCameraProximity", 4),
@@ -1047,6 +1050,9 @@ enum ScrFunc {
     FUNC_COPYOBJECT,
 #endif
     FUNC_PRINT,
+
+    FUNC_LOADVIDEO,
+    FUNC_NEXTVIDEOFRAME,
 
 #if RETRO_REV03
     // Extras
@@ -5515,6 +5521,22 @@ void ProcessScript(int scriptCodeStart, int jumpTableStart, byte scriptEvent)
                 if (scriptEng.operands[2])
                     PrintLog("\n");
                 endLine = true;
+                break;
+            }
+
+            case FUNC_LOADVIDEO: {
+                opcodeSize = 0;
+                PauseSound();
+                if (FindStringToken(scriptText, ".rsv", 1) <= -1)
+                    PlayVideoFile(scriptText);
+                else
+                    scriptInfo->spriteSheetID = AddGraphicsFile(scriptText);
+                ResumeSound();
+                break;
+            }
+            case FUNC_NEXTVIDEOFRAME: {
+                opcodeSize = 0;
+                UpdateVideoFrame();
                 break;
             }
 

@@ -271,6 +271,7 @@ enum RetroStates {
     ENGINE_EXITPAUSE   = 6,
     ENGINE_ENDGAME     = 7,
     ENGINE_RESETGAME   = 8,
+    ENGINE_VIDEOWAIT   = 9,
 
 #if !RETRO_USE_ORIGINAL_CODE && RETRO_USE_NETWORKING
     // Custom GameModes (required to make some features work)
@@ -342,6 +343,7 @@ extern bool engineDebugMode;
 #include "Userdata.hpp"
 #include "Debug.hpp"
 #include "ModAPI.hpp"
+#include "v3/Video.hpp"
 
 // Native Entities
 #include "NativeObjects.hpp"
@@ -505,6 +507,7 @@ public:
     SDL_Texture *screenBuffer   = nullptr;
     SDL_Texture *screenBuffer2x = nullptr;
 #endif // RETRO_SOFTWARE_RENDERER
+    SDL_Texture *videoBuffer = nullptr;
 #endif
 
     SDL_Event sdlEvents;
@@ -519,6 +522,7 @@ public:
 
     SDL_Surface *screenBuffer   = nullptr;
     SDL_Surface *screenBuffer2x = nullptr;
+    SDL_Surface *videoBuffer    = nullptr;
 
     SDL_Event sdlEvents;
 #endif // RETRO_USING_SDL1

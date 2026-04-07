@@ -344,6 +344,32 @@ void FlipScreen()
         screenysize *= 2;
     }
 
+    if (Engine.gameMode == ENGINE_VIDEOWAIT) {
+        SDL_RenderClear(Engine.renderer);
+
+        SDL_Rect destVideoRect;
+        float screenAR = float(SCREEN_XSIZE) / float(SCREEN_YSIZE);
+        if (screenAR > videoAR) {
+            uint videoW       = uint(SCREEN_YSIZE * videoAR);
+            destVideoRect.x   = (SCREEN_XSIZE - videoW) / 2;
+            destVideoRect.w   = videoW;
+            destVideoRect.y   = 0;
+            destVideoRect.h   = SCREEN_YSIZE;
+        }
+        else {
+            uint videoH       = uint(SCREEN_XSIZE / videoAR);
+            destVideoRect.x   = 0;
+            destVideoRect.w   = SCREEN_XSIZE;
+            destVideoRect.y   = (SCREEN_YSIZE - videoH) / 2;
+            destVideoRect.h   = videoH;
+        }
+
+        SDL_RenderCopy(Engine.renderer, Engine.videoBuffer, NULL, &destVideoRect);
+        SDL_RenderPresent(Engine.renderer);
+        SDL_ShowWindow(Engine.window);
+    }
+    else {
+
     if (Engine.scalingMode != 0 && !disableEnhancedScaling) {
         // set up integer scaled texture, which is scaled to the largest integer scale of the screen buffer
         // before you make a texture that's larger than the window itself. This texture will then be scaled
@@ -466,46 +492,52 @@ void FlipScreen()
         SDL_RenderPresent(Engine.renderer);
     }
     SDL_ShowWindow(Engine.window);
+
+    } // end of non-video else
 #endif
 
 #if RETRO_USING_SDL1
-    ushort *px = (ushort *)Engine.screenBuffer->pixels;
-    int w      = SCREEN_XSIZE * Engine.windowScale;
-    int h      = SCREEN_YSIZE * Engine.windowScale;
-
-    if (Engine.windowScale == 1) {
-        ushort *frameBufferPtr = Engine.frameBuffer;
-        for (int y = 0; y < SCREEN_YSIZE; ++y) {
-            for (int x = 0; x < SCREEN_XSIZE; ++x) {
-                pixels[x] = frameBufferPtr[x];
-            }
-            frameBufferPtr += GFX_LINESIZE;
-            px += Engine.screenBuffer->pitch / sizeof(ushort);
-        }
-        // memcpy(Engine.screenBuffer->pixels, Engine.frameBuffer, Engine.screenBuffer->pitch * SCREEN_YSIZE);
+    if (Engine.gameMode == ENGINE_VIDEOWAIT) {
+        SDL_BlitSurface(Engine.videoBuffer, NULL, Engine.windowSurface, NULL);
+        SDL_Flip(Engine.windowSurface);
     }
     else {
-        // TODO: this better, I really dont know how to use SDL1.2 well lol
-        int dx = 0, dy = 0;
-        do {
+        ushort *px = (ushort *)Engine.screenBuffer->pixels;
+        int w      = SCREEN_XSIZE * Engine.windowScale;
+        int h      = SCREEN_YSIZE * Engine.windowScale;
+
+        if (Engine.windowScale == 1) {
+            ushort *frameBufferPtr = Engine.frameBuffer;
+            for (int y = 0; y < SCREEN_YSIZE; ++y) {
+                for (int x = 0; x < SCREEN_XSIZE; ++x) {
+                    pixels[x] = frameBufferPtr[x];
+                }
+                frameBufferPtr += GFX_LINESIZE;
+                px += Engine.screenBuffer->pitch / sizeof(ushort);
+            }
+        }
+        else {
+            int dx = 0, dy = 0;
             do {
-                int x = (int)(dx * (1.0f / Engine.windowScale));
-                int y = (int)(dy * (1.0f / Engine.windowScale));
+                do {
+                    int x = (int)(dx * (1.0f / Engine.windowScale));
+                    int y = (int)(dy * (1.0f / Engine.windowScale));
 
-                px[dx + (dy * w)] = Engine.frameBuffer[x + (y * GFX_LINESIZE)];
+                    px[dx + (dy * w)] = Engine.frameBuffer[x + (y * GFX_LINESIZE)];
 
-                dx++;
-            } while (dx < w);
-            dy++;
-            dx = 0;
-        } while (dy < h);
+                    dx++;
+                } while (dx < w);
+                dy++;
+                dx = 0;
+            } while (dy < h);
+        }
+
+        // Apply image to screen
+        SDL_BlitSurface(Engine.screenBuffer, NULL, Engine.windowSurface, NULL);
+
+        // Update Screen
+        SDL_Flip(Engine.windowSurface);
     }
-
-    // Apply image to screen
-    SDL_BlitSurface(Engine.screenBuffer, NULL, Engine.windowSurface, NULL);
-
-    // Update Screen
-    SDL_Flip(Engine.windowSurface);
 #endif
 
 #endif // !RETRO_SOFTWARE_RENDER

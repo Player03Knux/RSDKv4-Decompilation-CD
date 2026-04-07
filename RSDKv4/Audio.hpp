@@ -107,6 +107,10 @@ extern ChannelInfo sfxChannels[CHANNEL_COUNT];
 extern SDL_AudioSpec audioDeviceFormat;
 #endif
 
+#if RETRO_USING_SDL2
+extern SDL_AudioStream *ogv_stream;
+#endif
+
 int InitAudioPlayback();
 void LoadGlobalSfx();
 

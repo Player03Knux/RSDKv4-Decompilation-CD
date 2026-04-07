@@ -29,6 +29,18 @@ else()
     target_compile_options(RetroEngine PRIVATE ${VORBIS_STATIC_CFLAGS})
 endif()
 
+pkg_check_modules(THEORA theora theoradec)
+
+if(NOT THEORA_FOUND)
+    set(COMPILE_THEORA TRUE)
+    message(NOTICE "libtheora not found, attempting to build from source")
+else()
+    message("found libtheora")
+    target_link_libraries(RetroEngine ${THEORA_STATIC_LIBRARIES})
+    target_link_options(RetroEngine PRIVATE ${THEORA_STATIC_LDLIBS_OTHER})
+    target_compile_options(RetroEngine PRIVATE ${THEORA_STATIC_CFLAGS})
+endif()
+
 if(RETRO_USE_HW_RENDER)
     pkg_check_modules(GLEW glew)
 
